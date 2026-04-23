@@ -20,4 +20,6 @@ public:
 	void Delete();
 };
 
+
+
 #endif

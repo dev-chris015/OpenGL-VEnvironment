@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
+include_directories(Header-Files)
 
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -18,6 +19,12 @@ link_directories("${FREEGLUT_ROOT}/lib/x64")
 add_executable(app 
     src/main.cpp 
     src/glad.c
+    src/EBO.cpp
+    src/VAO.cpp
+    src/VBO.cpp
+    src/shaderClass.cpp
+    src/stb.cpp
+    src/Texture.cpp
 )
 
 target_link_libraries(app 
