@@ -21,5 +21,4 @@ public:
 	// Deletes the VAO
 	void Delete();
 };
-
 #endif

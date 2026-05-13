@@ -9,8 +9,19 @@ Texture::Texture(const char* image, GLenum texType, GLenum slot, GLenum format, 
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
 	stbi_set_flip_vertically_on_load(true);
+	
+	// Determine how many channels to request from stb_image
+	int reqChannels = 0;
+	if (format == GL_RGB) reqChannels = 3;
+	else if (format == GL_RGBA) reqChannels = 4;
+
 	// Reads the image from a file and stores it in bytes
-	unsigned char* bytes = stbi_load(image, &widthImg, &heightImg, &numColCh, 0);
+	unsigned char* bytes = stbi_load(image, &widthImg, &heightImg, &numColCh, reqChannels);
+
+	if (!bytes) {
+		std::cerr << "Error: No se pudo cargar la textura en la ruta: " << image << std::endl;
+		return;
+	}
 
 	// Generates an OpenGL texture object
 	glGenTextures(1, &ID);
@@ -26,15 +37,11 @@ Texture::Texture(const char* image, GLenum texType, GLenum slot, GLenum format, 
 	glTexParameteri(texType, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(texType, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	// Determine format based on numColCh
-	GLenum imgFormat = GL_RGB;
-	if (numColCh == 4)
-		imgFormat = GL_RGBA;
-	else if (numColCh == 1)
-		imgFormat = GL_RED;
+	// Set alignment to 1 for 3-channel images
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	// Assigns the image to the OpenGL Texture object
-	glTexImage2D(texType, 0, GL_RGBA, widthImg, heightImg, 0, imgFormat, pixelType, bytes);
+	glTexImage2D(texType, 0, format, widthImg, heightImg, 0, format, pixelType, bytes);
 	// Generates MipMaps
 	glGenerateMipmap(texType);
 
@@ -69,3 +76,4 @@ void Texture::Delete()
 {
 	glDeleteTextures(1, &ID);
 }
+

@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)
 project(PracticasOpenGL VERSION 1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -7,17 +7,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(include)
 include_directories(Header-Files)
 
+add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
+
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(GLEW CONFIG REQUIRED)
+# find_package(assimp CONFIG REQUIRED)
 
 # Configurar FreeGLUT (Local)
 set(FREEGLUT_ROOT "${CMAKE_SOURCE_DIR}/freeglut-MSVC/freeglut")
 include_directories("${FREEGLUT_ROOT}/include")
 link_directories("${FREEGLUT_ROOT}/lib/x64")
 
-add_executable(app 
-    src/main.cpp 
+add_executable(app
+    src/main.cpp
     src/glad.c
     src/EBO.cpp
     src/VAO.cpp
@@ -25,14 +28,16 @@ add_executable(app
     src/shaderClass.cpp
     src/stb.cpp
     src/Texture.cpp
+    src/Camera.cpp
 )
 
-target_link_libraries(app 
-    PRIVATE 
+target_link_libraries(app
+    PRIVATE
     glfw 
     glm::glm
     GLEW::GLEW
     freeglut
+    # assimp::assimp
 )
 
 if(WIN32)
