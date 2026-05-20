@@ -42,14 +42,16 @@ public:
     std::vector<Vertex>       vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture>      textures;
+    glm::vec4                 baseColor;
     unsigned int VAO;
 
     // constructor
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, glm::vec4 baseColor = glm::vec4(1.0f))
     {
         this->vertices = vertices;
         this->indices = indices;
         this->textures = textures;
+        this->baseColor = baseColor;
 
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
@@ -63,14 +65,19 @@ public:
         unsigned int specularNr = 1;
         unsigned int normalNr   = 1;
         unsigned int heightNr   = 1;
+        glUniform4fv(glGetUniformLocation(shader.ID, "materialColor"), 1, &baseColor[0]);
+        bool hasDiffuse = false;
+
         for(unsigned int i = 0; i < textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
             // retrieve texture number (the N in diffuse_textureN)
             std::string number;
             std::string name = textures[i].type;
-            if(name == "texture_diffuse")
+            if(name == "texture_diffuse") {
                 number = std::to_string(diffuseNr++);
+                hasDiffuse = true;
+            }
             else if(name == "texture_specular")
                 number = std::to_string(specularNr++); // transfer unsigned int to string
             else if(name == "texture_normal")
@@ -83,6 +90,7 @@ public:
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
+        glUniform1i(glGetUniformLocation(shader.ID, "hasDiffuseTexture"), hasDiffuse ? 1 : 0);
         
         // draw mesh
         glBindVertexArray(VAO);

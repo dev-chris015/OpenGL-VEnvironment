@@ -94,10 +94,27 @@ int main( )
     // Build and compile our shader program
     Shader ourShader( "res/shaders/model_loading.vs", "res/shaders/model_loading.frag" );
     
+    // Validate shader linked correctly
+    GLint shaderLinked = 0;
+    glGetProgramiv( ourShader.ID, GL_LINK_STATUS, &shaderLinked );
+    if ( !shaderLinked )
+    {
+        std::cout << "[FATAL] Shader program did not link. Check that res/shaders/ exists relative to the working directory." << std::endl;
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
+    
     // Load models
     // Note: You should place a model in assets/models/
     // For now, this is a placeholder. If no model exists, it will show an error in console but continue.
-    // Model ourModel( "../../assets/models/backpack/backpack.obj" ); 
+    Model ourModel( "../../assets/models/laptop.glb" );
+    
+    if ( ourModel.meshes.empty() )
+    {
+        std::cout << "[FATAL] Model failed to load or has no meshes. Check that ../../assets/models/911.glb exists." << std::endl;
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
     
     // Game loop
     while ( !glfwWindowShouldClose( window ) )
@@ -122,13 +139,14 @@ int main( )
         glm::mat4 view = camera.GetViewMatrix( );
         ourShader.setMat4( "projection", projection );
         ourShader.setMat4( "view", view );
+        glUniform3f(glGetUniformLocation(ourShader.ID, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
         
         // Draw the loaded model
         glm::mat4 model = glm::mat4( 1.0f );
-        model = glm::translate( model, glm::vec3( 0.0f, 0.0f, 0.0f ) ); 
+        model = glm::translate( model, glm::vec3( 0.0f, -0.5f, 0.0f ) ); // translated down a bit
         model = glm::scale( model, glm::vec3( 1.0f, 1.0f, 1.0f ) );	
         ourShader.setMat4( "model", model );
-        // ourModel.Draw( ourShader );
+        ourModel.Draw( ourShader );
         
         // Swap the screen buffers
         glfwSwapBuffers( window );

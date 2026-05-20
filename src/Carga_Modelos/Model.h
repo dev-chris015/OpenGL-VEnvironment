@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <SOIL2.h>
+#include <stb/stb_image.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -21,6 +22,7 @@
 #include <vector>
 
 unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma = false);
+unsigned int TextureFromEmbedded(const aiTexture* tex);
 
 class Model 
 {
@@ -50,7 +52,10 @@ private:
     {
         // read file via ASSIMP
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        // NOTE: aiProcess_FlipUVs is intentionally omitted for GLB/GLTF files.
+        // GLB already uses OpenGL's UV convention (origin at bottom-left).
+        // FlipUVs would invert them and cause distorted textures.
+        const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
         // check for errors
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
@@ -143,33 +148,39 @@ private:
         }
         // process materials
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];    
-        // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
-        // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
-        // Same applies to other texture as the following list summarizes:
-        // diffuse: texture_diffuseN
-        // specular: texture_specularN
-        // normal: texture_normalN
 
-        // 1. diffuse maps
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+        aiColor4D baseColor(1.0f, 1.0f, 1.0f, 1.0f);
+        if(AI_SUCCESS != material->Get(AI_MATKEY_BASE_COLOR, baseColor)) {
+            material->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor);
+        }
+        glm::vec4 meshColor(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+
+        // 1. diffuse maps (traditional) + base color (PBR/GLTF)
+        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
+        if(diffuseMaps.empty())
+            diffuseMaps = loadMaterialTextures(material, aiTextureType_BASE_COLOR, "texture_diffuse", scene);
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        // 2. specular maps
-        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+        // 2. specular maps (traditional) + metalness (PBR/GLTF)
+        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", scene);
+        if(specularMaps.empty())
+            specularMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_specular", scene);
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         // 3. normal maps
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", scene);
+        if(normalMaps.empty())
+            normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal", scene);
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-        // 4. height maps
-        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+        // 4. height / ambient maps
+        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height", scene);
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
         
         // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, textures);
+        return Mesh(vertices, indices, textures, meshColor);
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.
     // the required info is returned as a Texture struct.
-    std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName)
+    std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName, const aiScene *scene)
     {
         std::vector<Texture> textures;
         for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
@@ -190,7 +201,20 @@ private:
             if(!skip)
             {   // if texture hasn't been loaded already, load it
                 Texture texture;
-                texture.id = TextureFromFile(str.C_Str(), this->directory);
+                // Embedded textures in GLB/GLTF are referenced as "*N" (e.g. "*0", "*5").
+                // We must load them from the aiScene's mTextures array, not from disk.
+                if(str.C_Str()[0] == '*')
+                {
+                    int texIndex = std::atoi(str.C_Str() + 1);
+                    if(texIndex >= 0 && static_cast<unsigned int>(texIndex) < scene->mNumTextures)
+                        texture.id = TextureFromEmbedded(scene->mTextures[texIndex]);
+                    else
+                        std::cout << "TextureFromEmbedded: index " << texIndex << " out of range (" << scene->mNumTextures << ")" << std::endl;
+                }
+                else
+                {
+                    texture.id = TextureFromFile(str.C_Str(), this->directory);
+                }
                 texture.type = typeName;
                 texture.path = str.C_Str();
                 textures.push_back(texture);
@@ -201,6 +225,83 @@ private:
     }
 };
 
+
+// Loads a texture embedded inside a GLB/GLTF file (Assimp aiTexture).
+// When mHeight == 0, pcData holds compressed image bytes (PNG/JPG) and mWidth is the byte length.
+// When mHeight > 0, pcData holds raw ARGB8888 pixels as aiTexel structs (b, g, r, a order).
+unsigned int TextureFromEmbedded(const aiTexture* tex)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    if(!tex || !tex->pcData)
+    {
+        std::cout << "TextureFromEmbedded: null texture pointer" << std::endl;
+        return textureID;
+    }
+
+    int width = 0, height = 0, nrComponents = 0;
+    unsigned char* stbData  = nullptr;  // stbi-allocated, free with stbi_image_free
+    unsigned char* rawRGBA  = nullptr;  // our own buffer, free with delete[]
+    const unsigned char* uploadData = nullptr;
+
+    if(tex->mHeight == 0)
+    {
+        // Compressed image (PNG, JPG, …) — decode from memory using stb_image.
+        // mWidth holds the byte length of the compressed buffer when mHeight == 0.
+        // Force 4 channels (RGBA) to avoid any format ambiguity.
+        stbData = stbi_load_from_memory(
+            reinterpret_cast<const stbi_uc*>(tex->pcData),
+            static_cast<int>(tex->mWidth),
+            &width, &height, &nrComponents,
+            STBI_rgb_alpha   // force RGBA output
+        );
+
+        if(!stbData)
+        {
+            std::cout << "TextureFromEmbedded: stb_image failed: " << stbi_failure_reason() << std::endl;
+            return textureID;
+        }
+
+        uploadData   = stbData;
+        nrComponents = 4;  // we forced RGBA
+    }
+    else
+    {
+        // Raw pixel data: Assimp stores it as aiTexel { b, g, r, a } per pixel.
+        // Convert to RGBA for OpenGL.
+        width  = static_cast<int>(tex->mWidth);
+        height = static_cast<int>(tex->mHeight);
+        int pixelCount = width * height;
+
+        rawRGBA = new unsigned char[pixelCount * 4];
+        const aiTexel* src = tex->pcData;
+        for(int i = 0; i < pixelCount; i++)
+        {
+            rawRGBA[i*4 + 0] = src[i].r;
+            rawRGBA[i*4 + 1] = src[i].g;
+            rawRGBA[i*4 + 2] = src[i].b;
+            rawRGBA[i*4 + 3] = src[i].a;
+        }
+
+        uploadData   = rawRGBA;
+        nrComponents = 4;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uploadData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    if(stbData) stbi_image_free(stbData);
+    if(rawRGBA) delete[] rawRGBA;
+
+    return textureID;
+}
 
 unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma)
 {
