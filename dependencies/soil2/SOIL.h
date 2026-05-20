@@ -1,0 +1,6 @@
+#ifndef HEADER_SOIL_COMPATIBILITY
+#define HEADER_SOIL_COMPATIBILITY
+
+#include "SOIL2.h"
+
+#endif
