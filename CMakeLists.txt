@@ -16,6 +16,7 @@ add_definitions(-DGLM_FORCE_CTOR_INIT)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(assimp CONFIG REQUIRED)
 
 # Configurar FreeGLUT (Local)
 set(FREEGLUT_ROOT "${CMAKE_SOURCE_DIR}/freeglut-MSVC/freeglut")
@@ -46,6 +47,7 @@ function(add_lab_target NAME SRC_DIR)
         glfw 
         glm::glm
         freeglut
+        assimp::assimp
     )
     if(WIN32)
         target_link_libraries(${NAME} PRIVATE opengl32 user32 gdi32 shell32)
@@ -53,10 +55,4 @@ function(add_lab_target NAME SRC_DIR)
 endfunction()
 
 # Definicion de ejecutables para cada fase
-add_lab_target(Iluminacion_Basica src/Iluminacion_Basica)
-add_lab_target(Materiales src/Materiales)
-add_lab_target(Mapas_Iluminacion src/Mapas_Iluminacion)
-add_lab_target(Luz_Direccional src/Luz_Direccional)
-add_lab_target(Iluminacion_Punto src/Iluminacion_Punto)
-add_lab_target(Iluminacion_Punto_v2 src/Iluminacion_Punto_v2)
-add_lab_target(combinacion_luces src/Combinacion_Luces)
+add_lab_target(Carga_Modelos src/Carga_Modelos)
