@@ -99,7 +99,7 @@ sudo apt install libglfw3-dev libglm-dev libglew-dev libassimp-dev
    ```
 3. A partir de ese momento, presiona **`Ctrl + Shift + B`** para compilar y ejecutar de forma automatizada.
 
-### Forma 4: macOS / Linux (Terminal)
+### Forma 3: macOS / Linux (Terminal)
 Compila usando el Makefile proporcionado en la raíz:
 ```bash
 make
