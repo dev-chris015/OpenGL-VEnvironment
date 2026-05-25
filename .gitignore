@@ -22,3 +22,5 @@ Makefile
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+vcpkg/
+output.txt

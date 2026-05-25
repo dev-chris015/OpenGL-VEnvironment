@@ -33,7 +33,8 @@ El repositorio se organiza en diferentes ramas que reflejan la evolución del ap
 * **`Lab4` y `Lab5`**: Implementación de proyecciones, transformaciones espaciales en 3D y renderizado de formas geométricas.
 * **`Lab6`**: Finalización de la base del entorno tridimensional y preparativos para el sistema de iluminación.
 * **`Lab7`**: Implementación del sistema de sombreado e iluminación básica (luces direccionales, puntuales y combinaciones).
-* **`Lab8` (Rama activa actual)**: Integración del cargador de modelos Assimp con soporte completo para texturas embebidas (GLB/GLTF), corrección de coordenadas UV y shaders con modelo de iluminación optimizado (Key Light, Fill Light, reflejos especulares).
+* **`Lab8`**: Integración del cargador de modelos Assimp con soporte completo para texturas embebidas (GLB/GLTF), corrección de coordenadas UV y shaders con modelo de iluminación optimizado (Key Light, Fill Light, reflejos especulares).
+* **`Lab9` (Rama activa actual)**: Implementación de una caja de cielo (skybox) adaptada como habitación física cerrada, carga del modelo de televisor (`tv.glb`) y redimensionamiento dinámico de texturas de cubemap.
 * **`Expo`**: Código y recursos optimizados específicamente para demostración y exposición.
 
 ---
@@ -59,6 +60,14 @@ El sombreador (`model_loading.frag`) cuenta con un modelo de iluminación person
   - Ajuste del exponente de brillo (shininess) a `16.0` para que el brillo se disperse de forma más suave (ideal para materiales como plástico y metal satinado).
   - Intensidad de brillo configurada en `0.7` para reflejos definidos y atractivos.
 - **Fallback a Color Base**: Si el modelo carece de texturas de difusión, el shader realiza un fallback automático utilizando el color base del material (`materialColor`) definido en el archivo 3D.
+
+### 4. Caja de Cielo y Entorno de Habitación (Lab9)
+El proyecto implementa un Skybox modificado para funcionar como una habitación física cerrada:
+- **Carga de Texturas de Cubemap**: Se cargan 6 imágenes individuales (`textura#4.jpeg` a `textura#9.jpeg`) utilizando la librería `stb_image`.
+- **Redimensionamiento Dinámico**: Las texturas se redimensionan en tiempo de ejecución a 1024x1024 píxeles para garantizar que todas las caras sean cuadradas y uniformes, evitando errores de consistencia en OpenGL.
+- **Geometría Adaptada**: El skybox se dibuja sin la cara frontal (+Z), lo que permite "entrar" y ver el interior del entorno cúbico como una habitación de exposición física en lugar de un fondo infinito lejano.
+- **Renderizado sin Culling**: Se desactiva la eliminación de caras ocultas (`glDisable(GL_CULL_FACE)`) al dibujar el skybox para asegurar que las texturas interiores del cubo sean visibles desde la posición de la cámara.
+- **Carga y Escalado del Modelo**: El modelo principal se cambia a un televisor (`tv.glb`), posicionado en el centro del skybox, rotado para estar derecho hacia la cámara y escalado a un tamaño monumental (factor de 12.0) acorde al nuevo entorno.
 
 ---
 
