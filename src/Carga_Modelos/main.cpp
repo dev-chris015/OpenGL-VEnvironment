@@ -1,7 +1,7 @@
 #include <cmath>
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
 
 // GLEW
 #include <GL/glew.h>
@@ -31,7 +31,8 @@ void DoMovement();
 unsigned int loadCubemap(std::vector<std::string> faces);
 
 // Window dimensions
-const GLuint WIDTH = 800, HEIGHT = 600; int SCREEN_WIDTH, SCREEN_HEIGHT;
+const GLuint WIDTH = 800, HEIGHT = 600;
+int SCREEN_WIDTH, SCREEN_HEIGHT;
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 20.0f));
@@ -110,45 +111,24 @@ int main() {
   // Skybox vertices (without front face +Z to see inside)
   float skyboxVertices[] = {
       // Back face (-Z)
-      -1.0f,  1.0f, -1.0f,
-      -1.0f, -1.0f, -1.0f,
-       1.0f, -1.0f, -1.0f,
-       1.0f, -1.0f, -1.0f,
-       1.0f,  1.0f, -1.0f,
-      -1.0f,  1.0f, -1.0f,
+      -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
+      -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
 
       // Left face (-X)
-      -1.0f, -1.0f,  1.0f,
-      -1.0f, -1.0f, -1.0f,
-      -1.0f,  1.0f, -1.0f,
-      -1.0f,  1.0f, -1.0f,
-      -1.0f,  1.0f,  1.0f,
-      -1.0f, -1.0f,  1.0f,
+      -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
+      -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
 
       // Right face (+X)
-       1.0f, -1.0f, -1.0f,
-       1.0f, -1.0f,  1.0f,
-       1.0f,  1.0f,  1.0f,
-       1.0f,  1.0f,  1.0f,
-       1.0f,  1.0f, -1.0f,
-       1.0f, -1.0f, -1.0f,
+      1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+      1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
 
       // Top face (+Y)
-      -1.0f,  1.0f, -1.0f,
-       1.0f,  1.0f, -1.0f,
-       1.0f,  1.0f,  1.0f,
-       1.0f,  1.0f,  1.0f,
-      -1.0f,  1.0f,  1.0f,
-      -1.0f,  1.0f, -1.0f,
+      -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+      -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f,
 
       // Bottom face (-Y)
-      -1.0f, -1.0f, -1.0f,
-      -1.0f, -1.0f,  1.0f,
-       1.0f, -1.0f, -1.0f,
-       1.0f, -1.0f, -1.0f,
-      -1.0f, -1.0f,  1.0f,
-       1.0f, -1.0f,  1.0f
-  };
+      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
+      -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f};
 
   // Skybox VAO/VBO
   unsigned int skyboxVAO, skyboxVBO;
@@ -156,19 +136,20 @@ int main() {
   glGenBuffers(1, &skyboxVBO);
   glBindVertexArray(skyboxVAO);
   glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices,
+               GL_STATIC_DRAW);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
 
   // Load skybox textures
   // We use the available textures in assets/textures for the demonstration.
-  std::vector<std::string> faces {
-      "../../assets/textures/textura#4.jpeg", // Right
-      "../../assets/textures/textura#5.jpeg", // Left
-      "../../assets/textures/textura#6.jpeg", // Top
-      "../../assets/textures/textura#7.jpeg", // Bottom
-      "../../assets/textures/textura#8.jpeg", // Front (missing geometry, but texture is loaded)
-      "../../assets/textures/textura#9.jpeg"  // Back
+  std::vector<std::string> faces{
+      "../../assets/textures/der.jpg",    // Right (+X)
+      "../../assets/textures/izq.jpg",    // Left (-X)
+      "../../assets/textures/arriba.jpg", // Top (+Y)
+      "../../assets/textures/abajo.jpg",  // Bottom (-Y)
+      "../../assets/textures/frente.jpg", // Front (+Z)
+      "../../assets/textures/atras.jpg"   // Back (-Z)
   };
   unsigned int cubemapTexture = loadCubemap(faces);
 
@@ -191,7 +172,8 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // --- Render Environment (Skybox mapped as a physical room) ---
-    // Disable face culling so we can see the inside of the cube from the outside
+    // Disable face culling so we can see the inside of the cube from the
+    // outside
     glDisable(GL_CULL_FACE);
 
     skyboxShader.use();
@@ -200,12 +182,12 @@ int main() {
     glm::mat4 view = camera.GetViewMatrix();
     skyboxShader.setMat4("view", view);
     skyboxShader.setMat4("projection", projection);
-    
+
     // Scale the cube to be large enough to contain the model
     glm::mat4 envModel = glm::mat4(1.0f);
     envModel = glm::scale(envModel, glm::vec3(15.0f, 15.0f, 15.0f));
     skyboxShader.setMat4("model", envModel);
-    
+
     glBindVertexArray(skyboxVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
@@ -219,15 +201,26 @@ int main() {
     ourShader.setMat4("view", view);
     glUniform3f(glGetUniformLocation(ourShader.ID, "viewPos"),
                 camera.Position.x, camera.Position.y, camera.Position.z);
-    
+
+    // Bind cubemap to texture unit 10 for reflection/refraction
+    glActiveTexture(GL_TEXTURE10);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    ourShader.setInt("skybox", 10);
+
     // Set a default material color in case the model has no diffuse textures
-    glUniform4f(glGetUniformLocation(ourShader.ID, "materialColor"), 0.8f, 0.8f, 0.8f, 1.0f);
+    glUniform4f(glGetUniformLocation(ourShader.ID, "materialColor"), 0.8f, 0.8f,
+                0.8f, 1.0f);
 
     // Draw the loaded model
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // Centrado en el skybox
-    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Rotado para estar derecho
-    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotado para mirar hacia la cámara
+    model = glm::translate(
+        model, glm::vec3(0.0f, 0.0f, 0.0f)); // Centrado en el skybox
+    model =
+        glm::rotate(model, glm::radians(90.0f),
+                    glm::vec3(1.0f, 0.0f, 0.0f)); // Rotado para estar derecho
+    model = glm::rotate(
+        model, glm::radians(180.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)); // Rotado para mirar hacia la cámara
     model = glm::scale(model, glm::vec3(12.0f, 12.0f, 12.0f));
     ourShader.setMat4("model", model);
     ourModel.Draw(ourShader);
@@ -246,54 +239,59 @@ int main() {
 
 // Loads a cubemap texture from 6 individual texture faces
 unsigned int loadCubemap(std::vector<std::string> faces) {
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+  unsigned int textureID;
+  glGenTextures(1, &textureID);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-    int width, height, nrChannels;
-    for (unsigned int i = 0; i < faces.size(); i++) {
-        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
-        if (data) {
-            GLenum format = GL_RGB;
-            if (nrChannels == 1)
-                format = GL_RED;
-            else if (nrChannels == 3)
-                format = GL_RGB;
-            else if (nrChannels == 4)
-                format = GL_RGBA;
+  int width, height, nrChannels;
+  for (unsigned int i = 0; i < faces.size(); i++) {
+    unsigned char *data =
+        stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+    if (data) {
+      GLenum format = GL_RGB;
+      if (nrChannels == 1)
+        format = GL_RED;
+      else if (nrChannels == 3)
+        format = GL_RGB;
+      else if (nrChannels == 4)
+        format = GL_RGBA;
 
-            // OpenGL exige que todas las caras de un cubemap sean cuadradas y del mismo tamaño.
-            // Redimensionamos a 1024x1024 usando interpolación de vecino más cercano.
-            int targetSize = 1024;
-            unsigned char* resizedData = new unsigned char[targetSize * targetSize * nrChannels];
-            for (int y = 0; y < targetSize; ++y) {
-                for (int x = 0; x < targetSize; ++x) {
-                    int srcX = x * width / targetSize;
-                    int srcY = y * height / targetSize;
-                    for (int c = 0; c < nrChannels; ++c) {
-                        resizedData[(y * targetSize + x) * nrChannels + c] = data[(srcY * width + srcX) * nrChannels + c];
-                    }
-                }
-            }
-
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
-                         0, format, targetSize, targetSize, 0, format, GL_UNSIGNED_BYTE, resizedData);
-            
-            delete[] resizedData;
-            stbi_image_free(data);
-        } else {
-            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
-            stbi_image_free(data);
+      // OpenGL exige que todas las caras de un cubemap sean cuadradas y del
+      // mismo tamaño. Redimensionamos a 1024x1024 usando interpolación de
+      // vecino más cercano.
+      int targetSize = 1024;
+      unsigned char *resizedData =
+          new unsigned char[targetSize * targetSize * nrChannels];
+      for (int y = 0; y < targetSize; ++y) {
+        for (int x = 0; x < targetSize; ++x) {
+          int srcX = x * width / targetSize;
+          int srcY = y * height / targetSize;
+          for (int c = 0; c < nrChannels; ++c) {
+            resizedData[(y * targetSize + x) * nrChannels + c] =
+                data[(srcY * width + srcX) * nrChannels + c];
+          }
         }
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+      }
 
-    return textureID;
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, targetSize,
+                   targetSize, 0, format, GL_UNSIGNED_BYTE, resizedData);
+
+      delete[] resizedData;
+      stbi_image_free(data);
+    } else {
+      std::cout << "Cubemap texture failed to load at path: " << faces[i]
+                << std::endl;
+      stbi_image_free(data);
+    }
+  }
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+  return textureID;
 }
 
 // Moves/alters the camera positions based on user input
